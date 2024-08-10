@@ -10,17 +10,45 @@
 	.importzp	sp, sreg, regsave, regbank
 	.importzp	tmp1, tmp2, tmp3, tmp4, ptr1, ptr2, ptr3, ptr4
 	.macpack	longbranch
+	.export		_draw_background_line
+	.export		_draw_title_screen
+	.export		_refresh_palettes
+	.importzp	_ctrl2
 	.importzp	_ctrl1
 	.import		_draw_meta_sprite
 	.import		_draw_sprite
-	.export		_foreground_palette
-	.export		_background_palette
+	.import		_clear_oam
+	.import		_clear_nametable
+	.import		_set_nametable_address
+	.import		_ppu_off
+	.import		_ppu_on
+	.import		_set_scroll
+	.import		_draw_nametable_string
+	.import		_set_palettes
+	.export		_standard
+	.export		_purple
+	.export		_red
+	.export		_blue
+	.export		_palette_names
+	.export		_palette_name_lengths
 	.export		_paddle
-	.export		_game_state
-	.export		_x_pos
-	.export		_y_pos
-	.export		_sprite
-	.export		_meta_x
+	.export		_paddle1y
+	.export		_paddle2y
+	.export		_ballx
+	.export		_bally
+	.export		_ball_direction
+	.export		_score1
+	.export		_score2
+	.export		_scroll_y
+	.export		_for_iter
+	.export		_game_over
+	.export		_in_game
+	.export		_selected_button
+	.export		_up_button_held_title
+	.export		_down_button_held_title
+	.export		_left_button_held_title
+	.export		_right_button_held_title
+	.export		_current_palette
 	.export		_init
 	.export		_draw
 	.export		_update
@@ -28,21 +56,50 @@
 .segment	"DATA"
 
 .segment	"ZEROPAGE"
-_game_state:
-	.byte	$00
-_x_pos:
-	.byte	$1E
-_y_pos:
-	.byte	$1E
-_sprite:
-	.byte	$0A
-_meta_x:
+_ball_direction:
 	.byte	$00
 .segment	"DATA"
 
 .segment	"RODATA"
 
-_foreground_palette:
+_standard:
+	.byte	$36
+	.byte	$03
+	.byte	$10
+	.byte	$30
+	.byte	$22
+	.byte	$01
+	.byte	$02
+	.byte	$03
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$03
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$03
+	.byte	$0D
+	.byte	$2D
+	.byte	$10
+	.byte	$30
+	.byte	$22
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+_purple:
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
 	.byte	$00
 	.byte	$01
 	.byte	$02
@@ -55,27 +112,101 @@ _foreground_palette:
 	.byte	$01
 	.byte	$02
 	.byte	$03
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+_red:
+	.byte	$04
+	.byte	$26
+	.byte	$05
+	.byte	$36
 	.byte	$00
 	.byte	$01
 	.byte	$02
 	.byte	$03
-_background_palette:
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$03
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$03
+	.byte	$04
+	.byte	$26
+	.byte	$05
+	.byte	$36
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+_blue:
+	.byte	$21
 	.byte	$05
 	.byte	$06
-	.byte	$07
-	.byte	$08
+	.byte	$16
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$03
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$03
+	.byte	$00
+	.byte	$01
+	.byte	$02
+	.byte	$03
+	.byte	$21
 	.byte	$05
 	.byte	$06
-	.byte	$07
+	.byte	$16
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+	.byte	$36
+	.byte	$03
+	.byte	$3B
+	.byte	$22
+_palette_names:
+	.byte	$73,$74,$61,$6E,$64,$61,$72,$64
+	.byte	$70,$61,$73,$74,$65,$6C,$00
+	.res	1,$00
+	.byte	$70,$75,$72,$70,$6C,$65,$00
+	.res	1,$00
+	.byte	$62,$6C,$75,$65,$00
+	.res	3,$00
+_palette_name_lengths:
 	.byte	$08
-	.byte	$05
 	.byte	$06
-	.byte	$07
-	.byte	$08
-	.byte	$05
 	.byte	$06
-	.byte	$07
-	.byte	$08
+	.byte	$04
 _paddle:
 	.byte	$00
 	.byte	$02
@@ -94,6 +225,354 @@ _paddle:
 	.byte	$00
 	.byte	$00
 	.res	16,$00
+L0194:
+	.byte	$70,$6C,$61,$79,$65,$72,$20,$32,$20,$77,$6F,$6E,$00
+L0183:
+	.byte	$70,$6C,$61,$79,$65,$72,$20,$31,$20,$77,$6F,$6E,$00
+L00CE:
+	.byte	$70,$61,$6C,$65,$74,$74,$65,$3A,$20,$00
+L00D4:
+	.byte	$73,$6F,$6E,$67,$3A,$20,$00
+L00C8:
+	.byte	$73,$74,$61,$72,$74,$00
+L00C2:
+	.byte	$70,$6F,$6E,$67,$00
+
+.segment	"BSS"
+
+_paddle1y:
+	.res	1,$00
+_paddle2y:
+	.res	1,$00
+_ballx:
+	.res	1,$00
+_bally:
+	.res	1,$00
+_score1:
+	.res	1,$00
+_score2:
+	.res	1,$00
+_scroll_y:
+	.res	1,$00
+_for_iter:
+	.res	1,$00
+_game_over:
+	.res	1,$00
+_in_game:
+	.res	1,$00
+_selected_button:
+	.res	1,$00
+_up_button_held_title:
+	.res	1,$00
+_down_button_held_title:
+	.res	1,$00
+_left_button_held_title:
+	.res	1,$00
+_right_button_held_title:
+	.res	1,$00
+_current_palette:
+	.res	1,$00
+
+; ---------------------------------------------------------------
+; void __near__ draw_background_line (void)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_draw_background_line: near
+
+.segment	"CODE"
+
+;
+; ppu_off();
+;
+	jsr     _ppu_off
+;
+; clear_nametable();
+;
+	jsr     _clear_nametable
+;
+; for (for_iter = 0; for_iter < 30; for_iter++) {
+;
+	lda     #$00
+	sta     _for_iter
+L0250:	lda     _for_iter
+	cmp     #$1E
+	bcs     L00E7
+;
+; set_nametable_address(16, for_iter, 1);
+;
+	jsr     decsp2
+	lda     #$10
+	ldy     #$01
+	sta     (sp),y
+	lda     _for_iter
+	dey
+	sta     (sp),y
+	lda     #$01
+	jsr     _set_nametable_address
+;
+; for (for_iter = 0; for_iter < 30; for_iter++) {
+;
+	inc     _for_iter
+	jmp     L0250
+;
+; set_scroll(0, 0);
+;
+L00E7:	lda     #$00
+	jsr     pusha
+	jsr     _set_scroll
+;
+; ppu_on();
+;
+	jmp     _ppu_on
+
+.endproc
+
+; ---------------------------------------------------------------
+; void __near__ draw_title_screen (void)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_draw_title_screen: near
+
+.segment	"CODE"
+
+;
+; ppu_off();
+;
+	jsr     _ppu_off
+;
+; clear_nametable();
+;
+	jsr     _clear_nametable
+;
+; draw_nametable_string(14,8,"pong",4);
+;
+	jsr     decsp4
+	lda     #$0E
+	ldy     #$03
+	sta     (sp),y
+	lda     #$08
+	dey
+	sta     (sp),y
+	lda     #<(L00C2)
+	ldy     #$00
+	sta     (sp),y
+	iny
+	lda     #>(L00C2)
+	sta     (sp),y
+	lda     #$04
+	jsr     _draw_nametable_string
+;
+; draw_nametable_string(12, 20, "start", 5);
+;
+	jsr     decsp4
+	lda     #$0C
+	ldy     #$03
+	sta     (sp),y
+	lda     #$14
+	dey
+	sta     (sp),y
+	lda     #<(L00C8)
+	ldy     #$00
+	sta     (sp),y
+	iny
+	lda     #>(L00C8)
+	sta     (sp),y
+	lda     #$05
+	jsr     _draw_nametable_string
+;
+; draw_nametable_string(12, 22, "palette: ", 9);
+;
+	jsr     decsp4
+	lda     #$0C
+	ldy     #$03
+	sta     (sp),y
+	lda     #$16
+	dey
+	sta     (sp),y
+	lda     #<(L00CE)
+	ldy     #$00
+	sta     (sp),y
+	iny
+	lda     #>(L00CE)
+	sta     (sp),y
+	lda     #$09
+	jsr     _draw_nametable_string
+;
+; draw_nametable_string(12, 24, "song: ", 6);
+;
+	jsr     decsp4
+	lda     #$0C
+	ldy     #$03
+	sta     (sp),y
+	lda     #$18
+	dey
+	sta     (sp),y
+	lda     #<(L00D4)
+	ldy     #$00
+	sta     (sp),y
+	iny
+	lda     #>(L00D4)
+	sta     (sp),y
+	lda     #$06
+	jsr     _draw_nametable_string
+;
+; draw_nametable_string(21, 22, palette_names[current_palette], palette_name_lengths[current_palette]);
+;
+	jsr     decsp4
+	lda     #$15
+	ldy     #$03
+	sta     (sp),y
+	lda     #$16
+	dey
+	sta     (sp),y
+	ldx     #$00
+	lda     _current_palette
+	jsr     aslax3
+	clc
+	adc     #<(_palette_names)
+	tay
+	txa
+	adc     #>(_palette_names)
+	tax
+	tya
+	ldy     #$00
+	sta     (sp),y
+	iny
+	txa
+	sta     (sp),y
+	ldy     _current_palette
+	lda     _palette_name_lengths,y
+	jsr     _draw_nametable_string
+;
+; set_scroll(0,0);
+;
+	lda     #$00
+	jsr     pusha
+	jsr     _set_scroll
+;
+; ppu_on();
+;
+	jmp     _ppu_on
+
+.endproc
+
+; ---------------------------------------------------------------
+; void __near__ refresh_palettes (void)
+; ---------------------------------------------------------------
+
+.segment	"CODE"
+
+.proc	_refresh_palettes: near
+
+.segment	"CODE"
+
+;
+; switch(current_palette) {
+;
+	lda     _current_palette
+;
+; }
+;
+	beq     L00FB
+	cmp     #$01
+	beq     L0100
+	cmp     #$02
+	beq     L0105
+	cmp     #$03
+	beq     L010A
+	jmp     L00F9
+;
+; set_palettes(standard.foreground, standard.background);
+;
+L00FB:	lda     #<(_standard)
+	ldx     #>(_standard)
+	jsr     pushax
+	lda     #<(_standard+16)
+	ldx     #>(_standard+16)
+;
+; break;
+;
+	jmp     L0251
+;
+; set_palettes(purple.foreground, purple.background);
+;
+L0100:	lda     #<(_purple)
+	ldx     #>(_purple)
+	jsr     pushax
+	lda     #<(_purple+16)
+	ldx     #>(_purple+16)
+;
+; break;
+;
+	jmp     L0251
+;
+; set_palettes(red.foreground, red.background);
+;
+L0105:	lda     #<(_red)
+	ldx     #>(_red)
+	jsr     pushax
+	lda     #<(_red+16)
+	ldx     #>(_red+16)
+;
+; break;
+;
+	jmp     L0251
+;
+; set_palettes(blue.foreground, blue.background);
+;
+L010A:	lda     #<(_blue)
+	ldx     #>(_blue)
+	jsr     pushax
+	lda     #<(_blue+16)
+	ldx     #>(_blue+16)
+L0251:	jsr     _set_palettes
+;
+; ppu_off();
+;
+L00F9:	jsr     _ppu_off
+;
+; draw_nametable_string(21, 22, palette_names[current_palette], sizeof(palette_names[current_palette]));
+;
+	jsr     decsp4
+	lda     #$15
+	ldy     #$03
+	sta     (sp),y
+	lda     #$16
+	dey
+	sta     (sp),y
+	ldx     #$00
+	lda     _current_palette
+	jsr     aslax3
+	clc
+	adc     #<(_palette_names)
+	tay
+	txa
+	adc     #>(_palette_names)
+	tax
+	tya
+	ldy     #$00
+	sta     (sp),y
+	iny
+	txa
+	sta     (sp),y
+	lda     #$08
+	jsr     _draw_nametable_string
+;
+; set_scroll(0,0);
+;
+	lda     #$00
+	jsr     pusha
+	jsr     _set_scroll
+;
+; ppu_on();
+;
+	jmp     _ppu_on
+
+.endproc
 
 ; ---------------------------------------------------------------
 ; void __near__ init (void)
@@ -106,9 +585,51 @@ _paddle:
 .segment	"CODE"
 
 ;
-; asm("rts");
+; paddle1y = 104;
 ;
-	rts
+	lda     #$68
+	sta     _paddle1y
+;
+; paddle2y = 104;
+;
+	sta     _paddle2y
+;
+; ballx = 124;
+;
+	lda     #$7C
+	sta     _ballx
+;
+; bally = 104;
+;
+	lda     #$68
+	sta     _bally
+;
+; ball_direction = DOWN_RIGHT;
+;
+	lda     #$03
+	sta     _ball_direction
+;
+; score1 = 0x30;
+;
+	lda     #$30
+	sta     _score1
+;
+; score2 = 0x30;
+;
+	sta     _score2
+;
+; set_palettes(standard.foreground, standard.background);
+;
+	lda     #<(_standard)
+	ldx     #>(_standard)
+	jsr     pushax
+	lda     #<(_standard+16)
+	ldx     #>(_standard+16)
+	jsr     _set_palettes
+;
+; draw_title_screen();
+;
+	jmp     _draw_title_screen
 
 .endproc
 
@@ -123,53 +644,9 @@ _paddle:
 .segment	"CODE"
 
 ;
-; draw_sprite(x_pos, y_pos, 0, 1);
+; }
 ;
-	jsr     decsp3
-	lda     _x_pos
-	ldy     #$02
-	sta     (sp),y
-	lda     _y_pos
-	dey
-	sta     (sp),y
-	lda     #$00
-	dey
-	sta     (sp),y
-	lda     #$01
-	jsr     _draw_sprite
-;
-; draw_sprite(70, 50, 0xA9, 3);
-;
-	jsr     decsp3
-	lda     #$46
-	ldy     #$02
-	sta     (sp),y
-	lda     #$32
-	dey
-	sta     (sp),y
-	lda     #$A9
-	dey
-	sta     (sp),y
-	lda     #$03
-	jsr     _draw_sprite
-;
-; draw_meta_sprite(meta_x,20,paddle,32);
-;
-	jsr     decsp4
-	lda     _meta_x
-	ldy     #$03
-	sta     (sp),y
-	lda     #$14
-	dey
-	sta     (sp),y
-	lda     #<(_paddle)
-	ldy     #$00
-	sta     (sp),y
-	iny
-	lda     #>(_paddle)
-	sta     (sp),y
-	lda     #$20
-	jmp     _draw_meta_sprite
+	rts
 
 .endproc
 
@@ -184,63 +661,822 @@ _paddle:
 .segment	"CODE"
 
 ;
-; meta_x++;
+; if (!in_game) {
 ;
-	inc     _meta_x
+	lda     _in_game
+	jne     L011C
 ;
-; if (ctrl1 & DOWN_BTN) {
+; if (ctrl1 & A_BTN && selected_button == 0) {
 ;
 	lda     _ctrl1
-	and     #$04
-	beq     L0065
-;
-; y_pos++;
-;
-	inc     _y_pos
-;
-; if (ctrl1 & UP_BTN) {
-;
-L0065:	lda     _ctrl1
-	and     #$08
-	beq     L0066
-;
-; y_pos--;
-;
-	dec     _y_pos
-;
-; if (ctrl1 & RIGHT_BTN) {
-;
-L0066:	lda     _ctrl1
-	and     #$01
-	beq     L0067
-;
-; x_pos++;
-;
-	inc     _x_pos
-;
-; if (ctrl1 & LEFT_BTN) {
-;
-L0067:	lda     _ctrl1
-	and     #$02
-	beq     L0068
-;
-; x_pos--;
-;
-	dec     _x_pos
-;
-; if (ctrl1 & A_BTN) {
-;
-L0068:	lda     _ctrl1
 	and     #$80
-	beq     L0060
+	beq     L025F
+	lda     _selected_button
+	bne     L025F
 ;
-; sprite--;
+; in_game = 1;
 ;
-	dec     _sprite
+	lda     #$01
+	sta     _in_game
+;
+; draw_background_line();
+;
+	jsr     _draw_background_line
+;
+; if (ctrl1 & DOWN_BTN && !up_button_held_title) {
+;
+L025F:	lda     _ctrl1
+	and     #$04
+	beq     L0263
+	lda     _up_button_held_title
+	bne     L0263
+;
+; up_button_held_title = 1;
+;
+	lda     #$01
+	sta     _up_button_held_title
+;
+; ++selected_button;
+;
+	inc     _selected_button
+;
+; if (selected_button > 2) {
+;
+	lda     _selected_button
+	cmp     #$03
+	bcc     L0264
+;
+; selected_button = 0;
+;
+	lda     #$00
+	sta     _selected_button
+;
+; } else if (!(ctrl1 & DOWN_BTN)) {
+;
+	jmp     L0264
+L0263:	lda     _ctrl1
+	and     #$04
+	bne     L0264
+;
+; up_button_held_title = 0;
+;
+	sta     _up_button_held_title
+;
+; if (ctrl1 & UP_BTN && !down_button_held_title) {
+;
+L0264:	lda     _ctrl1
+	and     #$08
+	beq     L0268
+	lda     _down_button_held_title
+	bne     L0268
+;
+; down_button_held_title = 1;
+;
+	lda     #$01
+	sta     _down_button_held_title
+;
+; --selected_button;
+;
+	dec     _selected_button
+;
+; if (selected_button == 255) {
+;
+	lda     _selected_button
+	cmp     #$FF
+	bne     L0269
+;
+; selected_button = 2;
+;
+	lda     #$02
+	sta     _selected_button
+;
+; } else if (!(ctrl1 & UP_BTN)) {
+;
+	jmp     L0269
+L0268:	lda     _ctrl1
+	and     #$08
+	bne     L0269
+;
+; down_button_held_title = 0;
+;
+	sta     _down_button_held_title
+;
+; if (ctrl1 & LEFT_BTN && !left_button_held_title) {
+;
+L0269:	lda     _ctrl1
+	and     #$02
+	beq     L026E
+	lda     _left_button_held_title
+	bne     L026E
+;
+; if (selected_button == 1) {
+;
+	lda     _selected_button
+	cmp     #$01
+	bne     L026D
+;
+; --current_palette;
+;
+	dec     _current_palette
+;
+; if (current_palette == 255) current_palette = PALETTE_COUNT-1;
+;
+	lda     _current_palette
+	cmp     #$FF
+	bne     L014E
+	lda     #$03
+	sta     _current_palette
+;
+; refresh_palettes();
+;
+L014E:	jsr     _refresh_palettes
+;
+; left_button_held_title = 1;
+;
+L026D:	lda     #$01
+;
+; } else if (!(ctrl1 & LEFT_BTN)) {
+;
+	jmp     L0252
+L026E:	lda     _ctrl1
+	and     #$02
+	bne     L026F
+;
+; left_button_held_title = 0;
+;
+L0252:	sta     _left_button_held_title
+;
+; if (ctrl1 & RIGHT_BTN && !right_button_held_title) {
+;
+L026F:	lda     _ctrl1
+	and     #$01
+	beq     L0274
+	lda     _right_button_held_title
+	bne     L0274
+;
+; if (selected_button == 1) {
+;
+	lda     _selected_button
+	cmp     #$01
+	bne     L0273
+;
+; ++current_palette;
+;
+	inc     _current_palette
+;
+; if (current_palette == PALETTE_COUNT) current_palette = 0;
+;
+	lda     _current_palette
+	cmp     #$04
+	bne     L0162
+	lda     #$00
+	sta     _current_palette
+;
+; refresh_palettes();
+;
+L0162:	jsr     _refresh_palettes
+;
+; right_button_held_title = 1;
+;
+L0273:	lda     #$01
+;
+; } else if (!(ctrl1 & RIGHT_BTN)) {
+;
+	jmp     L0253
+L0274:	lda     _ctrl1
+	and     #$01
+	bne     L016A
+;
+; right_button_held_title = 0;
+;
+L0253:	sta     _right_button_held_title
+;
+; clear_oam();
+;
+L016A:	jsr     _clear_oam
+;
+; draw_sprite(80, 160 + (selected_button * 16), 0, 1);
+;
+	jsr     decsp3
+	lda     #$50
+	ldy     #$02
+	sta     (sp),y
+	lda     _selected_button
+	asl     a
+	asl     a
+	asl     a
+	asl     a
+	clc
+	adc     #$A0
+	dey
+	sta     (sp),y
+	lda     #$00
+	dey
+	sta     (sp),y
+	lda     #$01
+	jmp     _draw_sprite
+;
+; scroll_y -= 1;
+;
+L011C:	dec     _scroll_y
+;
+; if (score1 > 0x39 && game_over == 0) {
+;
+	lda     _score1
+	cmp     #$3A
+	bcc     L0278
+	lda     _game_over
+	bne     L0278
+;
+; game_over = 1;
+;
+	lda     #$01
+	sta     _game_over
+;
+; ppu_off();
+;
+	jsr     _ppu_off
+;
+; draw_nametable_string(10,16, "player 1 won", 12);
+;
+	jsr     decsp4
+	lda     #$0A
+	ldy     #$03
+	sta     (sp),y
+	lda     #$10
+	dey
+	sta     (sp),y
+	lda     #<(L0183)
+	ldy     #$00
+	sta     (sp),y
+	iny
+	lda     #>(L0183)
+	sta     (sp),y
+	lda     #$0C
+	jsr     _draw_nametable_string
+;
+; set_scroll(0, 0);
+;
+	lda     #$00
+	jsr     pusha
+	jsr     _set_scroll
+;
+; ppu_on();
+;
+	jsr     _ppu_on
+;
+; if (score2 > 0x39 && game_over == 0) {
+;
+L0278:	lda     _score2
+	cmp     #$3A
+	bcc     L018A
+	lda     _game_over
+	bne     L018A
+;
+; game_over = 1;
+;
+	lda     #$01
+	sta     _game_over
+;
+; ppu_off();
+;
+	jsr     _ppu_off
+;
+; draw_nametable_string(10,16, "player 2 won", 12);
+;
+	jsr     decsp4
+	lda     #$0A
+	ldy     #$03
+	sta     (sp),y
+	lda     #$10
+	dey
+	sta     (sp),y
+	lda     #<(L0194)
+	ldy     #$00
+	sta     (sp),y
+	iny
+	lda     #>(L0194)
+	sta     (sp),y
+	lda     #$0C
+	jsr     _draw_nametable_string
+;
+; set_scroll(0, 0);
+;
+	lda     #$00
+	jsr     pusha
+	jsr     _set_scroll
+;
+; ppu_on();
+;
+	jsr     _ppu_on
+;
+; clear_oam();
+;
+L018A:	jsr     _clear_oam
+;
+; draw_sprite(ballx, bally, 0, 1);
+;
+	jsr     decsp3
+	lda     _ballx
+	ldy     #$02
+	sta     (sp),y
+	lda     _bally
+	dey
+	sta     (sp),y
+	lda     #$00
+	dey
+	sta     (sp),y
+	lda     #$01
+	jsr     _draw_sprite
+;
+; draw_meta_sprite(20,paddle1y,paddle,32);
+;
+	jsr     decsp4
+	lda     #$14
+	ldy     #$03
+	sta     (sp),y
+	lda     _paddle1y
+	dey
+	sta     (sp),y
+	lda     #<(_paddle)
+	ldy     #$00
+	sta     (sp),y
+	iny
+	lda     #>(_paddle)
+	sta     (sp),y
+	lda     #$20
+	jsr     _draw_meta_sprite
+;
+; draw_meta_sprite(228,paddle2y,paddle,32);
+;
+	jsr     decsp4
+	lda     #$E4
+	ldy     #$03
+	sta     (sp),y
+	lda     _paddle2y
+	dey
+	sta     (sp),y
+	lda     #<(_paddle)
+	ldy     #$00
+	sta     (sp),y
+	iny
+	lda     #>(_paddle)
+	sta     (sp),y
+	lda     #$20
+	jsr     _draw_meta_sprite
+;
+; if (score1 < 0x39) { 
+;
+	lda     _score1
+	cmp     #$39
+	bcs     L01AB
+;
+; draw_sprite(64,20,0,score1);
+;
+	jsr     decsp3
+	lda     #$40
+	ldy     #$02
+	sta     (sp),y
+	lda     #$14
+	dey
+	sta     (sp),y
+	lda     #$00
+	dey
+	sta     (sp),y
+	lda     _score1
+;
+; } else {
+;
+	jmp     L0254
+;
+; draw_sprite(64,20,0,0x39);
+;
+L01AB:	jsr     decsp3
+	lda     #$40
+	ldy     #$02
+	sta     (sp),y
+	lda     #$14
+	dey
+	sta     (sp),y
+	lda     #$00
+	dey
+	sta     (sp),y
+	lda     #$39
+L0254:	jsr     _draw_sprite
+;
+; if (score2 < 0x39) { 
+;
+	lda     _score2
+	cmp     #$39
+	bcs     L01B8
+;
+; draw_sprite(192,20,0,score2);
+;
+	jsr     decsp3
+	lda     #$C0
+	ldy     #$02
+	sta     (sp),y
+	lda     #$14
+	dey
+	sta     (sp),y
+	lda     #$00
+	dey
+	sta     (sp),y
+	lda     _score2
+;
+; } else {
+;
+	jmp     L0255
+;
+; draw_sprite(192,20,0,0x39);
+;
+L01B8:	jsr     decsp3
+	lda     #$C0
+	ldy     #$02
+	sta     (sp),y
+	lda     #$14
+	dey
+	sta     (sp),y
+	lda     #$00
+	dey
+	sta     (sp),y
+	lda     #$39
+L0255:	jsr     _draw_sprite
+;
+; if (game_over) {
+;
+	lda     _game_over
+	beq     L01C5
+;
+; if (ctrl1 & B_BTN) {
+;
+	lda     _ctrl1
+	and     #$40
+	bne     L02A5
+;
+; }
+;
+	rts
+;
+; score1 = 0x30;
+;
+L02A5:	lda     #$30
+	sta     _score1
+;
+; score2 = 0x30;
+;
+	sta     _score2
+;
+; paddle1y = 104;
+;
+	lda     #$68
+	sta     _paddle1y
+;
+; paddle2y = 104;
+;
+	sta     _paddle2y
+;
+; game_over = 0;
+;
+	lda     #$00
+	sta     _game_over
+;
+; in_game = 0;
+;
+	sta     _in_game
+;
+; draw_title_screen();
+;
+	jmp     _draw_title_screen
+;
+; if (ctrl1 & DOWN_BTN && paddle1y < 216) {
+;
+L01C5:	lda     _ctrl1
+	and     #$04
+	beq     L027F
+	lda     _paddle1y
+	cmp     #$D8
+	bcs     L027F
+;
+; paddle1y += PADDLE_SPEED;
+;
+	lda     #$02
+	clc
+	adc     _paddle1y
+	sta     _paddle1y
+;
+; if (ctrl1 & UP_BTN && paddle1y > 0) {
+;
+L027F:	lda     _ctrl1
+	and     #$08
+	beq     L0283
+	lda     _paddle1y
+	beq     L0283
+;
+; paddle1y -= PADDLE_SPEED;
+;
+	sec
+	sbc     #$02
+	sta     _paddle1y
+;
+; if (ctrl2 & DOWN_BTN && paddle2y < 216) {
+;
+L0283:	lda     _ctrl2
+	and     #$04
+	beq     L0287
+	lda     _paddle2y
+	cmp     #$D8
+	bcs     L0287
+;
+; paddle2y += PADDLE_SPEED;
+;
+	lda     #$02
+	clc
+	adc     _paddle2y
+	sta     _paddle2y
+;
+; if (ctrl2 & UP_BTN && paddle2y > 0) {
+;
+L0287:	lda     _ctrl2
+	and     #$08
+	beq     L028B
+	lda     _paddle2y
+	beq     L028B
+;
+; paddle2y -= PADDLE_SPEED;
+;
+	sec
+	sbc     #$02
+	sta     _paddle2y
+;
+; if (ballx >= 250) { // change 250 to exact screen boundry
+;
+L028B:	lda     _ballx
+	cmp     #$FA
+	bcc     L028C
+;
+; score1++;
+;
+	inc     _score1
+;
+; else if (ballx <= 4) { // change 4 to exact screen boundry
+;
+	jmp     L02A2
+L028C:	lda     _ballx
+	cmp     #$05
+	bcs     L028D
+;
+; score2++;
+;
+	inc     _score2
+;
+; ballx = 124;
+;
+L02A2:	lda     #$7C
+	sta     _ballx
+;
+; bally = 104;
+;
+	lda     #$68
+	sta     _bally
+;
+; if (bally >= 240) {
+;
+L028D:	lda     _bally
+	cmp     #$F0
+	bcc     L0290
+;
+; switch (ball_direction) {
+;
+	lda     _ball_direction
+;
+; }
+;
+	cmp     #$01
+	beq     L028E
+	cmp     #$03
+	beq     L028F
+	jmp     L0290
+;
+; ball_direction = UP_LEFT;
+;
+L028E:	lda     #$00
+;
+; break;
+;
+	jmp     L0257
+;
+; ball_direction = UP_RIGHT;
+;
+L028F:	lda     #$02
+L0257:	sta     _ball_direction
+;
+; if (bally <= 6) {
+;
+L0290:	lda     _bally
+	cmp     #$07
+	bcs     L0293
+;
+; switch (ball_direction) {
+;
+	lda     _ball_direction
+;
+; }
+;
+	beq     L0291
+	cmp     #$02
+	beq     L0292
+	jmp     L0293
+;
+; ball_direction = DOWN_LEFT;
+;
+L0291:	lda     #$01
+;
+; break;
+;
+	jmp     L0258
+;
+; ball_direction = DOWN_RIGHT;
+;
+L0292:	lda     #$03
+L0258:	sta     _ball_direction
+;
+; switch (ball_direction) {
+;
+L0293:	lda     _ball_direction
+;
+; }
+;
+	beq     L0294
+	cmp     #$01
+	beq     L0295
+	cmp     #$02
+	beq     L0297
+	cmp     #$03
+	beq     L0298
+	jmp     L0299
+;
+; ballx -= BALL_SPEED;
+;
+L0294:	lda     _ballx
+	sec
+	sbc     #$02
+	sta     _ballx
+;
+; bally -= BALL_SPEED;
+;
+	lda     _bally
+	sec
+	sbc     #$02
+;
+; break;
+;
+	jmp     L0259
+;
+; ballx -= BALL_SPEED;
+;
+L0295:	lda     _ballx
+	sec
+	sbc     #$02
+;
+; break;
+;
+	jmp     L02A4
+;
+; ballx += BALL_SPEED;
+;
+L0297:	clc
+	adc     _ballx
+	sta     _ballx
+;
+; bally -= BALL_SPEED;
+;
+	lda     _bally
+	sec
+	sbc     #$02
+;
+; break;
+;
+	jmp     L0259
+;
+; ballx += BALL_SPEED;
+;
+L0298:	lda     #$02
+	clc
+	adc     _ballx
+L02A4:	sta     _ballx
+;
+; bally += BALL_SPEED;
+;
+	lda     #$02
+	clc
+	adc     _bally
+L0259:	sta     _bally
+;
+; if (ballx <= 26 && bally > paddle1y-4 && bally < paddle1y+36) {
+;
+L0299:	lda     _ballx
+	cmp     #$1B
+	bcs     L029B
+	lda     _bally
+	jsr     pusha0
+	lda     _paddle1y
+	sec
+	sbc     #$04
+	bcs     L0235
+	ldx     #$FF
+L0235:	jsr     tosicmp
+	bcc     L029B
+	beq     L029B
+	lda     _bally
+	jsr     pusha0
+	lda     _paddle1y
+	clc
+	adc     #$24
+	bcc     L0236
+	ldx     #$01
+L0236:	jsr     tosicmp
+	bcs     L029B
+;
+; if (bally < paddle1y + 16) {
+;
+	lda     _bally
+	jsr     pusha0
+	lda     _paddle1y
+	clc
+	adc     #$10
+	bcc     L023A
+	ldx     #$01
+L023A:	jsr     tosicmp
+	bcs     L0238
+;
+; ball_direction = UP_RIGHT;
+;
+	lda     #$02
+;
+; } else {
+;
+	jmp     L025A
+;
+; ball_direction = DOWN_RIGHT;
+;
+L0238:	lda     #$03
+L025A:	sta     _ball_direction
+;
+; if (ballx >= 220 && bally > paddle2y-4 && bally < paddle2y+36) {
+;
+L029B:	lda     _ballx
+	cmp     #$DC
+	bcc     L029D
+	lda     _bally
+	jsr     pusha0
+	lda     _paddle2y
+	sec
+	sbc     #$04
+	bcs     L0243
+	ldx     #$FF
+L0243:	jsr     tosicmp
+	bcc     L029D
+	beq     L029D
+	lda     _bally
+	jsr     pusha0
+	lda     _paddle2y
+	clc
+	adc     #$24
+	bcc     L0244
+	ldx     #$01
+L0244:	jsr     tosicmp
+	bcc     L0241
+L029D:	rts
+;
+; if (bally < paddle2y + 16) {
+;
+L0241:	lda     _bally
+	jsr     pusha0
+	lda     _paddle2y
+	clc
+	adc     #$10
+	bcc     L0248
+	ldx     #$01
+L0248:	jsr     tosicmp
+	bcs     L0246
+;
+; ball_direction = UP_LEFT;
+;
+	lda     #$00
+;
+; } else {
+;
+	jmp     L025B
+;
+; ball_direction = DOWN_LEFT;
+;
+L0246:	lda     #$01
+L025B:	sta     _ball_direction
 ;
 ; asm("rts");
 ;
-L0060:	rts
+	rts
 
 .endproc
 

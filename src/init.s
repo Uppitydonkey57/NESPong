@@ -1,5 +1,5 @@
 .export __STARTUP__:absolute=1
-.exportzp _ctrl1, _ctrl2, spr_count, ftmp1, ftmp2, ftmp3, fptr1, ftmp4
+.exportzp _ctrl1, _ctrl2, spr_count, ftmp1, ftmp2, ftmp3, fptr1, ftmp4, f16tmp1
 .import _init,_update,_draw
 .importzp sp
 
@@ -41,7 +41,9 @@ ftmp1: .res 1
 ftmp2: .res 1
 ftmp3: .res 1
 ftmp4: .res 1
+f16tmp1: .res 2
 fptr1: .res 2 ; lo then hi
+fptr2: .res 2 ; lo then hi
 _ctrl1: .res 1
 _ctrl2: .res 1
 spr_count: .res 1
@@ -96,6 +98,7 @@ clear_mem:
 	sta OAMDMA
 	nop
 
+
 	lda #$3F ; REPLACE WITH C LATER
 	sta PPUADDR
 	lda #$00
@@ -119,15 +122,20 @@ load_palettes:
 	lda #%00011110
 	sta PPUMASK
 	jsr _init
+init_apu:
+	lda #$0F
+	sta $4015
 
 Loop:
 	jmp Loop
 
 NMI:
-	jsr _draw
-	jsr read_controller
+	;temp
+	;temp end
 	lda #$02
 	sta OAMDMA
+	jsr _draw
+	jsr read_controller
 	jsr _update
 	rti
 
@@ -142,17 +150,28 @@ read_loop:
 	lsr a
 	rol _ctrl1
 	bcc read_loop
+read_controller2:
+	lda #1
+	sta _ctrl2
+	sta CTRL2PORT
+	lda #$0
+	sta CTRL2PORT
+read_loop2:
+	lda CTRL2PORT
+	lsr a
+	rol _ctrl2
+	bcc read_loop2
 	rts
 
 .segment "RODATA"
 	palette_data:
-	  .byte $22,$29,$1A,$0F,$22,$36,$17,$0f,$22,$30,$21,$0f,$22,$27,$17,$0F  ;background palette data
-	  .byte $22,$16,$27,$18,$22,$1A,$30,$27,$22,$16,$30,$27,$22,$0F,$36,$17  ;sprite palette data
+	  .byte $0D,$2D,$10,$30,$22,$36,$17,$0f,$22,$30,$21,$0f,$22,$27,$17,$22  ;background palette data
+	  .byte $0D,$2D,$10,$30,$22,$1A,$30,$27,$22,$16,$30,$27,$22,$0F,$36,$17  ;sprite palette data
 
 .segment "VECTORS"
 	.word NMI
 	.word Reset
 	; 
 .segment "CHARS"
-	.incbin "Pong.chr"
+	.incbin "Alpha.chr"
 ; basic setup from this video: https://www.youtube.com/watch?v=LeCGYp0JWok (ASM SETUP)

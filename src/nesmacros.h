@@ -10,6 +10,11 @@ struct OAMSprite {
 	u8 x;
 };
 
+struct Palette {
+	u8 foreground[16];
+	u8 background[16];
+};
+
 extern u8 ctrl2;
 #pragma zpsym("ctrl2");
 extern u8 ctrl1;
@@ -39,6 +44,16 @@ extern u8 ctrl1;
 void draw_meta_sprite(u8 x_pos, u8 y_pos, const u8 *sprite_ptr, u8 sprite_size);
 void draw_sprite(u8 x_pos, u8 y_pos, u8 attribute, u8 sprite_num);
 void clear_oam(void);
+void clear_nametable();
+void set_nametable_address(u8 x, u8 y, u8 sprite);
+void ppu_off();
+void ppu_on();
+void set_scroll(u8 x, u8 y);
+void set_ppu_addr(u16 address);
+void write_ppu_data(u8 sprite);
+void draw_nametable_string(u8 x, u8 y, const char *string, u8 length);
+void set_palettes(const u8 *foreground, const u8 *background);
+void square_sfx(u8 pitch, u8 volume, u8 duty_cycle, u8 sfx_length);
 
 extern char iter;
 #endif
