@@ -23,6 +23,8 @@
 	.import		_ppu_off
 	.import		_ppu_on
 	.import		_set_scroll
+	.import		_set_ppu_addr
+	.import		_write_ppu_data
 	.import		_draw_nametable_string
 	.import		_set_palettes
 	.export		_standard
@@ -225,17 +227,17 @@ _paddle:
 	.byte	$00
 	.byte	$00
 	.res	16,$00
-L0194:
+L0198:
 	.byte	$70,$6C,$61,$79,$65,$72,$20,$32,$20,$77,$6F,$6E,$00
-L0183:
+L0187:
 	.byte	$70,$6C,$61,$79,$65,$72,$20,$31,$20,$77,$6F,$6E,$00
-L00CE:
+L00D2:
 	.byte	$70,$61,$6C,$65,$74,$74,$65,$3A,$20,$00
-L00D4:
+L00D8:
 	.byte	$73,$6F,$6E,$67,$3A,$20,$00
-L00C8:
+L00CC:
 	.byte	$73,$74,$61,$72,$74,$00
-L00C2:
+L00C6:
 	.byte	$70,$6F,$6E,$67,$00
 
 .segment	"BSS"
@@ -296,9 +298,9 @@ _current_palette:
 ;
 	lda     #$00
 	sta     _for_iter
-L0250:	lda     _for_iter
+L0254:	lda     _for_iter
 	cmp     #$1E
-	bcs     L00E7
+	bcs     L00EB
 ;
 ; set_nametable_address(16, for_iter, 1);
 ;
@@ -315,11 +317,11 @@ L0250:	lda     _for_iter
 ; for (for_iter = 0; for_iter < 30; for_iter++) {
 ;
 	inc     _for_iter
-	jmp     L0250
+	jmp     L0254
 ;
 ; set_scroll(0, 0);
 ;
-L00E7:	lda     #$00
+L00EB:	lda     #$00
 	jsr     pusha
 	jsr     _set_scroll
 ;
@@ -348,6 +350,17 @@ L00E7:	lda     #$00
 ;
 	jsr     _clear_nametable
 ;
+; set_ppu_addr(0x2000);
+;
+	ldx     #$20
+	lda     #$00
+	jsr     _set_ppu_addr
+;
+; write_ppu_data(1);
+;
+	lda     #$01
+	jsr     _write_ppu_data
+;
 ; draw_nametable_string(14,8,"pong",4);
 ;
 	jsr     decsp4
@@ -357,11 +370,11 @@ L00E7:	lda     #$00
 	lda     #$08
 	dey
 	sta     (sp),y
-	lda     #<(L00C2)
+	lda     #<(L00C6)
 	ldy     #$00
 	sta     (sp),y
 	iny
-	lda     #>(L00C2)
+	lda     #>(L00C6)
 	sta     (sp),y
 	lda     #$04
 	jsr     _draw_nametable_string
@@ -375,11 +388,11 @@ L00E7:	lda     #$00
 	lda     #$14
 	dey
 	sta     (sp),y
-	lda     #<(L00C8)
+	lda     #<(L00CC)
 	ldy     #$00
 	sta     (sp),y
 	iny
-	lda     #>(L00C8)
+	lda     #>(L00CC)
 	sta     (sp),y
 	lda     #$05
 	jsr     _draw_nametable_string
@@ -393,11 +406,11 @@ L00E7:	lda     #$00
 	lda     #$16
 	dey
 	sta     (sp),y
-	lda     #<(L00CE)
+	lda     #<(L00D2)
 	ldy     #$00
 	sta     (sp),y
 	iny
-	lda     #>(L00CE)
+	lda     #>(L00D2)
 	sta     (sp),y
 	lda     #$09
 	jsr     _draw_nametable_string
@@ -411,11 +424,11 @@ L00E7:	lda     #$00
 	lda     #$18
 	dey
 	sta     (sp),y
-	lda     #<(L00D4)
+	lda     #<(L00D8)
 	ldy     #$00
 	sta     (sp),y
 	iny
-	lda     #>(L00D4)
+	lda     #>(L00D8)
 	sta     (sp),y
 	lda     #$06
 	jsr     _draw_nametable_string
@@ -477,18 +490,18 @@ L00E7:	lda     #$00
 ;
 ; }
 ;
-	beq     L00FB
+	beq     L00FF
 	cmp     #$01
-	beq     L0100
+	beq     L0104
 	cmp     #$02
-	beq     L0105
+	beq     L0109
 	cmp     #$03
-	beq     L010A
-	jmp     L00F9
+	beq     L010E
+	jmp     L00FD
 ;
 ; set_palettes(standard.foreground, standard.background);
 ;
-L00FB:	lda     #<(_standard)
+L00FF:	lda     #<(_standard)
 	ldx     #>(_standard)
 	jsr     pushax
 	lda     #<(_standard+16)
@@ -496,11 +509,11 @@ L00FB:	lda     #<(_standard)
 ;
 ; break;
 ;
-	jmp     L0251
+	jmp     L0255
 ;
 ; set_palettes(purple.foreground, purple.background);
 ;
-L0100:	lda     #<(_purple)
+L0104:	lda     #<(_purple)
 	ldx     #>(_purple)
 	jsr     pushax
 	lda     #<(_purple+16)
@@ -508,11 +521,11 @@ L0100:	lda     #<(_purple)
 ;
 ; break;
 ;
-	jmp     L0251
+	jmp     L0255
 ;
 ; set_palettes(red.foreground, red.background);
 ;
-L0105:	lda     #<(_red)
+L0109:	lda     #<(_red)
 	ldx     #>(_red)
 	jsr     pushax
 	lda     #<(_red+16)
@@ -520,20 +533,20 @@ L0105:	lda     #<(_red)
 ;
 ; break;
 ;
-	jmp     L0251
+	jmp     L0255
 ;
 ; set_palettes(blue.foreground, blue.background);
 ;
-L010A:	lda     #<(_blue)
+L010E:	lda     #<(_blue)
 	ldx     #>(_blue)
 	jsr     pushax
 	lda     #<(_blue+16)
 	ldx     #>(_blue+16)
-L0251:	jsr     _set_palettes
+L0255:	jsr     _set_palettes
 ;
 ; ppu_off();
 ;
-L00F9:	jsr     _ppu_off
+L00FD:	jsr     _ppu_off
 ;
 ; draw_nametable_string(21, 22, palette_names[current_palette], sizeof(palette_names[current_palette]));
 ;
@@ -664,15 +677,15 @@ L00F9:	jsr     _ppu_off
 ; if (!in_game) {
 ;
 	lda     _in_game
-	jne     L011C
+	jne     L0120
 ;
 ; if (ctrl1 & A_BTN && selected_button == 0) {
 ;
 	lda     _ctrl1
 	and     #$80
-	beq     L025F
+	beq     L0263
 	lda     _selected_button
-	bne     L025F
+	bne     L0263
 ;
 ; in_game = 1;
 ;
@@ -685,11 +698,11 @@ L00F9:	jsr     _ppu_off
 ;
 ; if (ctrl1 & DOWN_BTN && !up_button_held_title) {
 ;
-L025F:	lda     _ctrl1
+L0263:	lda     _ctrl1
 	and     #$04
-	beq     L0263
+	beq     L0267
 	lda     _up_button_held_title
-	bne     L0263
+	bne     L0267
 ;
 ; up_button_held_title = 1;
 ;
@@ -704,7 +717,7 @@ L025F:	lda     _ctrl1
 ;
 	lda     _selected_button
 	cmp     #$03
-	bcc     L0264
+	bcc     L0268
 ;
 ; selected_button = 0;
 ;
@@ -713,10 +726,10 @@ L025F:	lda     _ctrl1
 ;
 ; } else if (!(ctrl1 & DOWN_BTN)) {
 ;
-	jmp     L0264
-L0263:	lda     _ctrl1
+	jmp     L0268
+L0267:	lda     _ctrl1
 	and     #$04
-	bne     L0264
+	bne     L0268
 ;
 ; up_button_held_title = 0;
 ;
@@ -724,11 +737,11 @@ L0263:	lda     _ctrl1
 ;
 ; if (ctrl1 & UP_BTN && !down_button_held_title) {
 ;
-L0264:	lda     _ctrl1
+L0268:	lda     _ctrl1
 	and     #$08
-	beq     L0268
+	beq     L026C
 	lda     _down_button_held_title
-	bne     L0268
+	bne     L026C
 ;
 ; down_button_held_title = 1;
 ;
@@ -743,7 +756,7 @@ L0264:	lda     _ctrl1
 ;
 	lda     _selected_button
 	cmp     #$FF
-	bne     L0269
+	bne     L026D
 ;
 ; selected_button = 2;
 ;
@@ -752,10 +765,10 @@ L0264:	lda     _ctrl1
 ;
 ; } else if (!(ctrl1 & UP_BTN)) {
 ;
-	jmp     L0269
-L0268:	lda     _ctrl1
+	jmp     L026D
+L026C:	lda     _ctrl1
 	and     #$08
-	bne     L0269
+	bne     L026D
 ;
 ; down_button_held_title = 0;
 ;
@@ -763,17 +776,17 @@ L0268:	lda     _ctrl1
 ;
 ; if (ctrl1 & LEFT_BTN && !left_button_held_title) {
 ;
-L0269:	lda     _ctrl1
+L026D:	lda     _ctrl1
 	and     #$02
-	beq     L026E
+	beq     L0272
 	lda     _left_button_held_title
-	bne     L026E
+	bne     L0272
 ;
 ; if (selected_button == 1) {
 ;
 	lda     _selected_button
 	cmp     #$01
-	bne     L026D
+	bne     L0271
 ;
 ; --current_palette;
 ;
@@ -783,42 +796,42 @@ L0269:	lda     _ctrl1
 ;
 	lda     _current_palette
 	cmp     #$FF
-	bne     L014E
+	bne     L0152
 	lda     #$03
 	sta     _current_palette
 ;
 ; refresh_palettes();
 ;
-L014E:	jsr     _refresh_palettes
+L0152:	jsr     _refresh_palettes
 ;
 ; left_button_held_title = 1;
 ;
-L026D:	lda     #$01
+L0271:	lda     #$01
 ;
 ; } else if (!(ctrl1 & LEFT_BTN)) {
 ;
-	jmp     L0252
-L026E:	lda     _ctrl1
+	jmp     L0256
+L0272:	lda     _ctrl1
 	and     #$02
-	bne     L026F
+	bne     L0273
 ;
 ; left_button_held_title = 0;
 ;
-L0252:	sta     _left_button_held_title
+L0256:	sta     _left_button_held_title
 ;
 ; if (ctrl1 & RIGHT_BTN && !right_button_held_title) {
 ;
-L026F:	lda     _ctrl1
+L0273:	lda     _ctrl1
 	and     #$01
-	beq     L0274
+	beq     L0278
 	lda     _right_button_held_title
-	bne     L0274
+	bne     L0278
 ;
 ; if (selected_button == 1) {
 ;
 	lda     _selected_button
 	cmp     #$01
-	bne     L0273
+	bne     L0277
 ;
 ; ++current_palette;
 ;
@@ -828,32 +841,32 @@ L026F:	lda     _ctrl1
 ;
 	lda     _current_palette
 	cmp     #$04
-	bne     L0162
+	bne     L0166
 	lda     #$00
 	sta     _current_palette
 ;
 ; refresh_palettes();
 ;
-L0162:	jsr     _refresh_palettes
+L0166:	jsr     _refresh_palettes
 ;
 ; right_button_held_title = 1;
 ;
-L0273:	lda     #$01
+L0277:	lda     #$01
 ;
 ; } else if (!(ctrl1 & RIGHT_BTN)) {
 ;
-	jmp     L0253
-L0274:	lda     _ctrl1
+	jmp     L0257
+L0278:	lda     _ctrl1
 	and     #$01
-	bne     L016A
+	bne     L016E
 ;
 ; right_button_held_title = 0;
 ;
-L0253:	sta     _right_button_held_title
+L0257:	sta     _right_button_held_title
 ;
 ; clear_oam();
 ;
-L016A:	jsr     _clear_oam
+L016E:	jsr     _clear_oam
 ;
 ; draw_sprite(80, 160 + (selected_button * 16), 0, 1);
 ;
@@ -878,15 +891,15 @@ L016A:	jsr     _clear_oam
 ;
 ; scroll_y -= 1;
 ;
-L011C:	dec     _scroll_y
+L0120:	dec     _scroll_y
 ;
 ; if (score1 > 0x39 && game_over == 0) {
 ;
 	lda     _score1
 	cmp     #$3A
-	bcc     L0278
+	bcc     L027C
 	lda     _game_over
-	bne     L0278
+	bne     L027C
 ;
 ; game_over = 1;
 ;
@@ -906,11 +919,11 @@ L011C:	dec     _scroll_y
 	lda     #$10
 	dey
 	sta     (sp),y
-	lda     #<(L0183)
+	lda     #<(L0187)
 	ldy     #$00
 	sta     (sp),y
 	iny
-	lda     #>(L0183)
+	lda     #>(L0187)
 	sta     (sp),y
 	lda     #$0C
 	jsr     _draw_nametable_string
@@ -927,11 +940,11 @@ L011C:	dec     _scroll_y
 ;
 ; if (score2 > 0x39 && game_over == 0) {
 ;
-L0278:	lda     _score2
+L027C:	lda     _score2
 	cmp     #$3A
-	bcc     L018A
+	bcc     L018E
 	lda     _game_over
-	bne     L018A
+	bne     L018E
 ;
 ; game_over = 1;
 ;
@@ -951,11 +964,11 @@ L0278:	lda     _score2
 	lda     #$10
 	dey
 	sta     (sp),y
-	lda     #<(L0194)
+	lda     #<(L0198)
 	ldy     #$00
 	sta     (sp),y
 	iny
-	lda     #>(L0194)
+	lda     #>(L0198)
 	sta     (sp),y
 	lda     #$0C
 	jsr     _draw_nametable_string
@@ -972,7 +985,7 @@ L0278:	lda     _score2
 ;
 ; clear_oam();
 ;
-L018A:	jsr     _clear_oam
+L018E:	jsr     _clear_oam
 ;
 ; draw_sprite(ballx, bally, 0, 1);
 ;
@@ -1029,7 +1042,7 @@ L018A:	jsr     _clear_oam
 ;
 	lda     _score1
 	cmp     #$39
-	bcs     L01AB
+	bcs     L01AF
 ;
 ; draw_sprite(64,20,0,score1);
 ;
@@ -1047,11 +1060,11 @@ L018A:	jsr     _clear_oam
 ;
 ; } else {
 ;
-	jmp     L0254
+	jmp     L0258
 ;
 ; draw_sprite(64,20,0,0x39);
 ;
-L01AB:	jsr     decsp3
+L01AF:	jsr     decsp3
 	lda     #$40
 	ldy     #$02
 	sta     (sp),y
@@ -1062,13 +1075,13 @@ L01AB:	jsr     decsp3
 	dey
 	sta     (sp),y
 	lda     #$39
-L0254:	jsr     _draw_sprite
+L0258:	jsr     _draw_sprite
 ;
 ; if (score2 < 0x39) { 
 ;
 	lda     _score2
 	cmp     #$39
-	bcs     L01B8
+	bcs     L01BC
 ;
 ; draw_sprite(192,20,0,score2);
 ;
@@ -1086,11 +1099,11 @@ L0254:	jsr     _draw_sprite
 ;
 ; } else {
 ;
-	jmp     L0255
+	jmp     L0259
 ;
 ; draw_sprite(192,20,0,0x39);
 ;
-L01B8:	jsr     decsp3
+L01BC:	jsr     decsp3
 	lda     #$C0
 	ldy     #$02
 	sta     (sp),y
@@ -1101,18 +1114,18 @@ L01B8:	jsr     decsp3
 	dey
 	sta     (sp),y
 	lda     #$39
-L0255:	jsr     _draw_sprite
+L0259:	jsr     _draw_sprite
 ;
 ; if (game_over) {
 ;
 	lda     _game_over
-	beq     L01C5
+	beq     L01C9
 ;
 ; if (ctrl1 & B_BTN) {
 ;
 	lda     _ctrl1
 	and     #$40
-	bne     L02A5
+	bne     L02A9
 ;
 ; }
 ;
@@ -1120,7 +1133,7 @@ L0255:	jsr     _draw_sprite
 ;
 ; score1 = 0x30;
 ;
-L02A5:	lda     #$30
+L02A9:	lda     #$30
 	sta     _score1
 ;
 ; score2 = 0x30;
@@ -1151,12 +1164,12 @@ L02A5:	lda     #$30
 ;
 ; if (ctrl1 & DOWN_BTN && paddle1y < 216) {
 ;
-L01C5:	lda     _ctrl1
+L01C9:	lda     _ctrl1
 	and     #$04
-	beq     L027F
+	beq     L0283
 	lda     _paddle1y
 	cmp     #$D8
-	bcs     L027F
+	bcs     L0283
 ;
 ; paddle1y += PADDLE_SPEED;
 ;
@@ -1167,11 +1180,11 @@ L01C5:	lda     _ctrl1
 ;
 ; if (ctrl1 & UP_BTN && paddle1y > 0) {
 ;
-L027F:	lda     _ctrl1
+L0283:	lda     _ctrl1
 	and     #$08
-	beq     L0283
+	beq     L0287
 	lda     _paddle1y
-	beq     L0283
+	beq     L0287
 ;
 ; paddle1y -= PADDLE_SPEED;
 ;
@@ -1181,12 +1194,12 @@ L027F:	lda     _ctrl1
 ;
 ; if (ctrl2 & DOWN_BTN && paddle2y < 216) {
 ;
-L0283:	lda     _ctrl2
+L0287:	lda     _ctrl2
 	and     #$04
-	beq     L0287
+	beq     L028B
 	lda     _paddle2y
 	cmp     #$D8
-	bcs     L0287
+	bcs     L028B
 ;
 ; paddle2y += PADDLE_SPEED;
 ;
@@ -1197,11 +1210,11 @@ L0283:	lda     _ctrl2
 ;
 ; if (ctrl2 & UP_BTN && paddle2y > 0) {
 ;
-L0287:	lda     _ctrl2
+L028B:	lda     _ctrl2
 	and     #$08
-	beq     L028B
+	beq     L028F
 	lda     _paddle2y
-	beq     L028B
+	beq     L028F
 ;
 ; paddle2y -= PADDLE_SPEED;
 ;
@@ -1211,9 +1224,9 @@ L0287:	lda     _ctrl2
 ;
 ; if (ballx >= 250) { // change 250 to exact screen boundry
 ;
-L028B:	lda     _ballx
+L028F:	lda     _ballx
 	cmp     #$FA
-	bcc     L028C
+	bcc     L0290
 ;
 ; score1++;
 ;
@@ -1221,10 +1234,10 @@ L028B:	lda     _ballx
 ;
 ; else if (ballx <= 4) { // change 4 to exact screen boundry
 ;
-	jmp     L02A2
-L028C:	lda     _ballx
+	jmp     L02A6
+L0290:	lda     _ballx
 	cmp     #$05
-	bcs     L028D
+	bcs     L0291
 ;
 ; score2++;
 ;
@@ -1232,7 +1245,7 @@ L028C:	lda     _ballx
 ;
 ; ballx = 124;
 ;
-L02A2:	lda     #$7C
+L02A6:	lda     #$7C
 	sta     _ballx
 ;
 ; bally = 104;
@@ -1242,9 +1255,9 @@ L02A2:	lda     #$7C
 ;
 ; if (bally >= 240) {
 ;
-L028D:	lda     _bally
+L0291:	lda     _bally
 	cmp     #$F0
-	bcc     L0290
+	bcc     L0294
 ;
 ; switch (ball_direction) {
 ;
@@ -1253,29 +1266,29 @@ L028D:	lda     _bally
 ; }
 ;
 	cmp     #$01
-	beq     L028E
+	beq     L0292
 	cmp     #$03
-	beq     L028F
-	jmp     L0290
+	beq     L0293
+	jmp     L0294
 ;
 ; ball_direction = UP_LEFT;
 ;
-L028E:	lda     #$00
+L0292:	lda     #$00
 ;
 ; break;
 ;
-	jmp     L0257
+	jmp     L025B
 ;
 ; ball_direction = UP_RIGHT;
 ;
-L028F:	lda     #$02
-L0257:	sta     _ball_direction
+L0293:	lda     #$02
+L025B:	sta     _ball_direction
 ;
 ; if (bally <= 6) {
 ;
-L0290:	lda     _bally
+L0294:	lda     _bally
 	cmp     #$07
-	bcs     L0293
+	bcs     L0297
 ;
 ; switch (ball_direction) {
 ;
@@ -1283,42 +1296,42 @@ L0290:	lda     _bally
 ;
 ; }
 ;
-	beq     L0291
+	beq     L0295
 	cmp     #$02
-	beq     L0292
-	jmp     L0293
+	beq     L0296
+	jmp     L0297
 ;
 ; ball_direction = DOWN_LEFT;
 ;
-L0291:	lda     #$01
+L0295:	lda     #$01
 ;
 ; break;
 ;
-	jmp     L0258
+	jmp     L025C
 ;
 ; ball_direction = DOWN_RIGHT;
 ;
-L0292:	lda     #$03
-L0258:	sta     _ball_direction
+L0296:	lda     #$03
+L025C:	sta     _ball_direction
 ;
 ; switch (ball_direction) {
 ;
-L0293:	lda     _ball_direction
+L0297:	lda     _ball_direction
 ;
 ; }
 ;
-	beq     L0294
-	cmp     #$01
-	beq     L0295
-	cmp     #$02
-	beq     L0297
-	cmp     #$03
 	beq     L0298
-	jmp     L0299
+	cmp     #$01
+	beq     L0299
+	cmp     #$02
+	beq     L029B
+	cmp     #$03
+	beq     L029C
+	jmp     L029D
 ;
 ; ballx -= BALL_SPEED;
 ;
-L0294:	lda     _ballx
+L0298:	lda     _ballx
 	sec
 	sbc     #$02
 	sta     _ballx
@@ -1331,21 +1344,21 @@ L0294:	lda     _ballx
 ;
 ; break;
 ;
-	jmp     L0259
+	jmp     L025D
 ;
 ; ballx -= BALL_SPEED;
 ;
-L0295:	lda     _ballx
+L0299:	lda     _ballx
 	sec
 	sbc     #$02
 ;
 ; break;
 ;
-	jmp     L02A4
+	jmp     L02A8
 ;
 ; ballx += BALL_SPEED;
 ;
-L0297:	clc
+L029B:	clc
 	adc     _ballx
 	sta     _ballx
 ;
@@ -1357,46 +1370,46 @@ L0297:	clc
 ;
 ; break;
 ;
-	jmp     L0259
+	jmp     L025D
 ;
 ; ballx += BALL_SPEED;
 ;
-L0298:	lda     #$02
+L029C:	lda     #$02
 	clc
 	adc     _ballx
-L02A4:	sta     _ballx
+L02A8:	sta     _ballx
 ;
 ; bally += BALL_SPEED;
 ;
 	lda     #$02
 	clc
 	adc     _bally
-L0259:	sta     _bally
+L025D:	sta     _bally
 ;
 ; if (ballx <= 26 && bally > paddle1y-4 && bally < paddle1y+36) {
 ;
-L0299:	lda     _ballx
+L029D:	lda     _ballx
 	cmp     #$1B
-	bcs     L029B
+	bcs     L029F
 	lda     _bally
 	jsr     pusha0
 	lda     _paddle1y
 	sec
 	sbc     #$04
-	bcs     L0235
+	bcs     L0239
 	ldx     #$FF
-L0235:	jsr     tosicmp
-	bcc     L029B
-	beq     L029B
+L0239:	jsr     tosicmp
+	bcc     L029F
+	beq     L029F
 	lda     _bally
 	jsr     pusha0
 	lda     _paddle1y
 	clc
 	adc     #$24
-	bcc     L0236
+	bcc     L023A
 	ldx     #$01
-L0236:	jsr     tosicmp
-	bcs     L029B
+L023A:	jsr     tosicmp
+	bcs     L029F
 ;
 ; if (bally < paddle1y + 16) {
 ;
@@ -1405,10 +1418,10 @@ L0236:	jsr     tosicmp
 	lda     _paddle1y
 	clc
 	adc     #$10
-	bcc     L023A
+	bcc     L023E
 	ldx     #$01
-L023A:	jsr     tosicmp
-	bcs     L0238
+L023E:	jsr     tosicmp
+	bcs     L023C
 ;
 ; ball_direction = UP_RIGHT;
 ;
@@ -1416,50 +1429,50 @@ L023A:	jsr     tosicmp
 ;
 ; } else {
 ;
-	jmp     L025A
+	jmp     L025E
 ;
 ; ball_direction = DOWN_RIGHT;
 ;
-L0238:	lda     #$03
-L025A:	sta     _ball_direction
+L023C:	lda     #$03
+L025E:	sta     _ball_direction
 ;
 ; if (ballx >= 220 && bally > paddle2y-4 && bally < paddle2y+36) {
 ;
-L029B:	lda     _ballx
+L029F:	lda     _ballx
 	cmp     #$DC
-	bcc     L029D
+	bcc     L02A1
 	lda     _bally
 	jsr     pusha0
 	lda     _paddle2y
 	sec
 	sbc     #$04
-	bcs     L0243
+	bcs     L0247
 	ldx     #$FF
-L0243:	jsr     tosicmp
-	bcc     L029D
-	beq     L029D
+L0247:	jsr     tosicmp
+	bcc     L02A1
+	beq     L02A1
 	lda     _bally
 	jsr     pusha0
 	lda     _paddle2y
 	clc
 	adc     #$24
-	bcc     L0244
+	bcc     L0248
 	ldx     #$01
-L0244:	jsr     tosicmp
-	bcc     L0241
-L029D:	rts
+L0248:	jsr     tosicmp
+	bcc     L0245
+L02A1:	rts
 ;
 ; if (bally < paddle2y + 16) {
 ;
-L0241:	lda     _bally
+L0245:	lda     _bally
 	jsr     pusha0
 	lda     _paddle2y
 	clc
 	adc     #$10
-	bcc     L0248
+	bcc     L024C
 	ldx     #$01
-L0248:	jsr     tosicmp
-	bcs     L0246
+L024C:	jsr     tosicmp
+	bcs     L024A
 ;
 ; ball_direction = UP_LEFT;
 ;
@@ -1467,12 +1480,12 @@ L0248:	jsr     tosicmp
 ;
 ; } else {
 ;
-	jmp     L025B
+	jmp     L025F
 ;
 ; ball_direction = DOWN_LEFT;
 ;
-L0246:	lda     #$01
-L025B:	sta     _ball_direction
+L024A:	lda     #$01
+L025F:	sta     _ball_direction
 ;
 ; asm("rts");
 ;

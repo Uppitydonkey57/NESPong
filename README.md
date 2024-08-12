@@ -10,5 +10,5 @@ the file nesmacros.s creates a set of functions which manipulate the NES hardwar
 
 The game uses CA65 and CC65 as compilers
 
-A large portion of init.s was coded using the first episode of Micheal Chiaramonte's "the Zero Pages" series: 
+A large portion of init.s was coded using the fourth episode of Micheal Chiaramonte's "the Zero Pages" series (the process of initailizing the NES is really unintuitive so this tutorial really came in handy!): 
 https://www.youtube.com/watch?v=JgdcGcJga4w&list=PL29OkqO3wUxzOmjc0VKcdiNPqwliHEuEk&index=1&t
